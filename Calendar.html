@@ -14,13 +14,18 @@
             margin: 0;
             background-color: #f0f0f0;
         }
+        .calendar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
         .calendar {
             border: 1px solid #ccc;
             border-radius: 8px;
             background: #fff;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            width: 400px; /* Increased width */
+            width: 350px;
         }
         .calendar table {
             width: 100%;
@@ -28,15 +33,12 @@
         }
         .calendar th, .calendar td {
             border: 1px solid #ddd;
-            padding: 12px; /* Increased padding */
+            padding: 10px;
             text-align: center;
-            vertical-align: middle;
             box-sizing: border-box;
-            min-width: 40px; /* Minimum width for columns */
         }
         .calendar th {
             background-color: #f4f4f4;
-            font-weight: bold;
         }
         .calendar .header {
             text-align: center;
@@ -51,6 +53,11 @@
         }
         .calendar .date:hover {
             background-color: #f9f9f9;
+        }
+        .calendar .current-day {
+            background-color: #007BFF;
+            color: #fff;
+            border-radius: 50%;
         }
         .calendar .nav-buttons {
             text-align: center;
@@ -70,31 +77,80 @@
             background-color: #ddd;
             cursor: not-allowed;
         }
+        .event-list {
+            margin-top: 20px;
+            width: 100%;
+        }
+        .event-list h3 {
+            margin: 0;
+        }
+        .event-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .event-list li {
+            background: #eee;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .event-form {
+            margin-top: 20px;
+            width: 100%;
+        }
+        .event-form input, .event-form button {
+            width: calc(100% - 22px); /* Full width minus padding */
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .event-form button {
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        .event-form button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
-    <div class="calendar">
-        <div class="nav-buttons">
-            <button id="prev-month">Previous</button>
-            <button id="next-month">Next</button>
+    <div class="calendar-container">
+        <div class="calendar">
+            <div class="nav-buttons">
+                <button id="prev-month">Previous</button>
+                <button id="next-month">Next</button>
+            </div>
+            <div class="header">July 2024</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="day">Sun</th>
+                        <th class="day">Mon</th>
+                        <th class="day">Tue</th>
+                        <th class="day">Wed</th>
+                        <th class="day">Thu</th>
+                        <th class="day">Fri</th>
+                        <th class="day">Sat</th>
+                    </tr>
+                </thead>
+                <tbody id="calendar-body">
+                    <!-- Calendar dates will be inserted here by JavaScript -->
+                </tbody>
+            </table>
         </div>
-        <div class="header">July 2024</div>
-        <table>
-            <thead>
-                <tr>
-                    <th class="day">Sun</th>
-                    <th class="day">Mon</th>
-                    <th class="day">Tue</th>
-                    <th class="day">Wed</th>
-                    <th class="day">Thu</th>
-                    <th class="day">Fri</th>
-                    <th class="day">Sat</th>
-                </tr>
-            </thead>
-            <tbody id="calendar-body">
-                <!-- Calendar dates will be inserted here by JavaScript -->
-            </tbody>
-        </table>
+        <div class="event-list">
+            <h3>Events</h3>
+            <ul id="event-list">
+                <!-- Events will be listed here -->
+            </ul>
+        </div>
+        <div class="event-form">
+            <h3>Add Event</h3>
+            <input type="text" id="event-input" placeholder="Event description">
+            <button id="add-event">Add Event</button>
+        </div>
     </div>
 
     <script>
@@ -103,12 +159,14 @@
             'July', 'August', 'September', 'October', 'November', 'December'
         ];
         let currentDate = new Date();
+        let events = {};
 
         function renderCalendar() {
             const month = currentDate.getMonth();
             const year = currentDate.getFullYear();
             const firstDay = new Date(year, month, 1).getDay();
             const lastDate = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
 
             document.querySelector('.header').textContent = `${months[month]} ${year}`;
 
@@ -128,6 +186,10 @@
                 let cell = document.createElement('td');
                 cell.textContent = day;
                 cell.className = 'date';
+                if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                    cell.classList.add('current-day');
+                }
+                cell.addEventListener('click', () => showEvents(day));
                 row.appendChild(cell);
             }
 
@@ -135,6 +197,35 @@
                 calendarBody.appendChild(row);
             }
         }
+
+        function showEvents(day) {
+            const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${day}`;
+            const eventList = document.getElementById('event-list');
+            eventList.innerHTML = '';
+
+            if (events[dateKey]) {
+                events[dateKey].forEach(event => {
+                    let li = document.createElement('li');
+                    li.textContent = event;
+                    eventList.appendChild(li);
+                });
+            }
+        }
+
+        document.getElementById('add-event').addEventListener('click', () => {
+            const eventDescription = document.getElementById('event-input').value.trim();
+            const selectedDate = document.querySelector('.current-day');
+            if (!eventDescription || !selectedDate) return;
+
+            const day = selectedDate.textContent;
+            const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${day}`;
+            if (!events[dateKey]) {
+                events[dateKey] = [];
+            }
+            events[dateKey].push(eventDescription);
+            showEvents(day);
+            document.getElementById('event-input').value = '';
+        });
 
         document.getElementById('prev-month').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
