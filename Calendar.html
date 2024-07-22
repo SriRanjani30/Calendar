@@ -18,6 +18,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            max-width: 100%;
+            padding: 10px;
         }
         .calendar {
             border: 1px solid #ccc;
@@ -25,7 +27,8 @@
             background: #fff;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            width: 350px;
+            width: 100%;
+            max-width: 400px;
         }
         .calendar table {
             width: 100%;
@@ -33,7 +36,7 @@
         }
         .calendar th, .calendar td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 8px;
             text-align: center;
             box-sizing: border-box;
         }
@@ -92,17 +95,36 @@
             background: #eee;
             padding: 10px;
             border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .event-list button {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .event-list button:hover {
+            background-color: #c82333;
         }
         .event-form {
             margin-top: 20px;
             width: 100%;
         }
-        .event-form input, .event-form button {
-            width: calc(100% - 22px); /* Full width minus padding */
+        .event-form input, .event-form textarea, .event-form button {
+            width: calc(100% - 22px);
             padding: 10px;
             margin-top: 5px;
             border: 1px solid #ddd;
             border-radius: 4px;
+        }
+        .event-form textarea {
+            height: 80px;
+            resize: vertical;
         }
         .event-form button {
             background-color: #007BFF;
@@ -141,14 +163,17 @@
             </table>
         </div>
         <div class="event-list">
-            <h3>Events</h3>
+            <h3 id="event-date-header">Events</h3>
             <ul id="event-list">
                 <!-- Events will be listed here -->
             </ul>
         </div>
         <div class="event-form">
-            <h3>Add Event</h3>
-            <input type="text" id="event-input" placeholder="Event description">
+            <h3 id="event-form-header">Add Event</h3>
+            <input type="text" id="event-title" placeholder="Event title">
+            <input type="text" id="event-time" placeholder="Event time (e.g., 14:00)">
+            <input type="text" id="event-location" placeholder="Event location">
+            <textarea id="event-description" placeholder="Event description"></textarea>
             <button id="add-event">Add Event</button>
         </div>
     </div>
@@ -201,31 +226,84 @@
         function showEvents(day) {
             const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${day}`;
             const eventList = document.getElementById('event-list');
+            const eventDateHeader = document.getElementById('event-date-header');
             eventList.innerHTML = '';
+            eventDateHeader.textContent = `Events on ${day} ${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
 
             if (events[dateKey]) {
-                events[dateKey].forEach(event => {
+                events[dateKey].forEach((event, index) => {
                     let li = document.createElement('li');
-                    li.textContent = event;
+                    li.innerHTML = `
+                        <strong>${event.title}</strong><br>
+                        Time: ${event.time}<br>
+                        Location: ${event.location}<br>
+                        ${event.description}
+                        <button onclick="editEvent('${dateKey}', ${index})">Edit</button>
+                        <button onclick="deleteEvent('${dateKey}', ${index})">Delete</button>
+                    `;
                     eventList.appendChild(li);
                 });
             }
         }
 
-        document.getElementById('add-event').addEventListener('click', () => {
-            const eventDescription = document.getElementById('event-input').value.trim();
+        function editEvent(dateKey, index) {
+            const event = events[dateKey][index];
+            document.getElementById('event-title').value = event.title;
+            document.getElementById('event-time').value = event.time;
+            document.getElementById('event-location').value = event.location;
+            document.getElementById('event-description').value = event.description;
+            document.getElementById('add-event').textContent = 'Update Event';
+            document.getElementById('add-event').onclick = () => updateEvent(dateKey, index);
+        }
+
+        function updateEvent(dateKey, index) {
+            const eventTitle = document.getElementById('event-title').value.trim();
+            const eventTime = document.getElementById('event-time').value.trim();
+            const eventLocation = document.getElementById('event-location').value.trim();
+            const eventDescription = document.getElementById('event-description').value.trim();
+
+            if (!eventTitle || !eventTime || !eventLocation || !eventDescription) return;
+
+            events[dateKey][index] = { title: eventTitle, time: eventTime, location: eventLocation, description: eventDescription };
+            showEvents(new Date(dateKey).getDate());
+            resetForm();
+        }
+
+        function deleteEvent(dateKey, index) {
+            events[dateKey].splice(index, 1);
+            if (events[dateKey].length === 0) {
+                delete events[dateKey];
+            }
+            showEvents(new Date(dateKey).getDate());
+        }
+
+        function resetForm() {
+            document.getElementById('event-title').value = '';
+            document.getElementById('event-time').value = '';
+            document.getElementById('event-location').value = '';
+            document.getElementById('event-description').value = '';
+            document.getElementById('add-event').textContent = 'Add Event';
+            document.getElementById('add-event').onclick = () => addEvent();
+        }
+
+        function addEvent() {
+            const eventTitle = document.getElementById('event-title').value.trim();
+            const eventTime = document.getElementById('event-time').value.trim();
+            const eventLocation = document.getElementById('event-location').value.trim();
+            const eventDescription = document.getElementById('event-description').value.trim();
             const selectedDate = document.querySelector('.current-day');
-            if (!eventDescription || !selectedDate) return;
+
+            if (!eventTitle || !eventTime || !eventLocation || !eventDescription || !selectedDate) return;
 
             const day = selectedDate.textContent;
             const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${day}`;
             if (!events[dateKey]) {
                 events[dateKey] = [];
             }
-            events[dateKey].push(eventDescription);
+            events[dateKey].push({ title: eventTitle, time: eventTime, location: eventLocation, description: eventDescription });
             showEvents(day);
-            document.getElementById('event-input').value = '';
-        });
+            resetForm();
+        }
 
         document.getElementById('prev-month').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
