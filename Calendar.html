@@ -20,6 +20,7 @@
             background: #fff;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 400px; /* Increased width */
         }
         .calendar table {
             width: 100%;
@@ -27,11 +28,15 @@
         }
         .calendar th, .calendar td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 12px; /* Increased padding */
             text-align: center;
+            vertical-align: middle;
+            box-sizing: border-box;
+            min-width: 40px; /* Minimum width for columns */
         }
         .calendar th {
             background-color: #f4f4f4;
+            font-weight: bold;
         }
         .calendar .header {
             text-align: center;
@@ -47,10 +52,32 @@
         .calendar .date:hover {
             background-color: #f9f9f9;
         }
+        .calendar .nav-buttons {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .calendar .nav-buttons button {
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            margin: 0 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .calendar .nav-buttons button:disabled {
+            background-color: #ddd;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
     <div class="calendar">
+        <div class="nav-buttons">
+            <button id="prev-month">Previous</button>
+            <button id="next-month">Next</button>
+        </div>
         <div class="header">July 2024</div>
         <table>
             <thead>
@@ -64,63 +91,62 @@
                     <th class="day">Sat</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td class="date"></td>
-                    <td class="date"></td>
-                    <td class="date"></td>
-                    <td class="date"></td>
-                    <td class="date"></td>
-                    <td class="date">1</td>
-                    <td class="date">2</td>
-                </tr>
-                <tr>
-                    <td class="date">3</td>
-                    <td class="date">4</td>
-                    <td class="date">5</td>
-                    <td class="date">6</td>
-                    <td class="date">7</td>
-                    <td class="date">8</td>
-                    <td class="date">9</td>
-                </tr>
-                <tr>
-                    <td class="date">10</td>
-                    <td class="date">11</td>
-                    <td class="date">12</td>
-                    <td class="date">13</td>
-                    <td class="date">14</td>
-                    <td class="date">15</td>
-                    <td class="date">16</td>
-                </tr>
-                <tr>
-                    <td class="date">17</td>
-                    <td class="date">18</td>
-                    <td class="date">19</td>
-                    <td class="date">20</td>
-                    <td class="date">21</td>
-                    <td class="date">22</td>
-                    <td class="date">23</td>
-                </tr>
-                <tr>
-                    <td class="date">24</td>
-                    <td class="date">25</td>
-                    <td class="date">26</td>
-                    <td class="date">27</td>
-                    <td class="date">28</td>
-                    <td class="date">29</td>
-                    <td class="date">30</td>
-                </tr>
-                <tr>
-                    <td class="date">31</td>
-                    <td class="date"></td>
-                    <td class="date"></td>
-                    <td class="date"></td>
-                    <td class="date"></td>
-                    <td class="date"></td>
-                    <td class="date"></td>
-                </tr>
+            <tbody id="calendar-body">
+                <!-- Calendar dates will be inserted here by JavaScript -->
             </tbody>
         </table>
     </div>
+
+    <script>
+        const months = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        let currentDate = new Date();
+
+        function renderCalendar() {
+            const month = currentDate.getMonth();
+            const year = currentDate.getFullYear();
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+
+            document.querySelector('.header').textContent = `${months[month]} ${year}`;
+
+            let calendarBody = document.getElementById('calendar-body');
+            calendarBody.innerHTML = '';
+
+            let row = document.createElement('tr');
+            for (let i = 0; i < firstDay; i++) {
+                row.appendChild(document.createElement('td'));
+            }
+
+            for (let day = 1; day <= lastDate; day++) {
+                if (row.children.length === 7) {
+                    calendarBody.appendChild(row);
+                    row = document.createElement('tr');
+                }
+                let cell = document.createElement('td');
+                cell.textContent = day;
+                cell.className = 'date';
+                row.appendChild(cell);
+            }
+
+            if (row.children.length > 0) {
+                calendarBody.appendChild(row);
+            }
+        }
+
+        document.getElementById('prev-month').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        document.getElementById('next-month').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        renderCalendar();
+    </script>
 </body>
 </html>
